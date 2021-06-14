@@ -6,7 +6,6 @@ var expressJwt = require('express-jwt');
 
 
 exports.signup = (req, res)=>{
-
     const errors = validationResult(req);
 
     if(!errors.isEmpty()){
@@ -14,29 +13,27 @@ exports.signup = (req, res)=>{
             error_msg : errors.array()[0].msg,
             error_param : errors.array()[0].param,
             error_location : errors.array()[0].location,
-        })
+        });
     }
-
-
     const user = new User(req.body)
     user.save((err, user)=>{
         if(err){
             console.log(err);
             return res.status(400).json({
                 err : "Not able to save user in DB"
-            })
+            });
         }
         res.json({
             name: user.name,
             email: user.email,
             id: user._id
           });
-
-    })
+    });
 };
 
 
 exports.signin = (req, res)=>{
+    const errors = validationResult(req);
     const {email, password} = req.body;
 
     if(!errors.isEmpty()){
@@ -48,21 +45,18 @@ exports.signin = (req, res)=>{
     }
 
     User.findOne({email}, (err, user)=>{
-
-        if(err){
+        if(err || !user ){
             res.status(400).json({
                 error : "User email does not exists"
-            })
+            });
         }
-
         if(!user.authenticate(password)){
-
             return res.status(401).json({
                 error: "Email and password do not match"
-            })
+            });
         }
         //create token
-        const token = jwt.signin({_id: user._id}, process.env.SECRET);
+        const token = jwt.sign({_id: user._id}, process.env.SECRET);
         //put token in cookie
         res.cookie("token", token, {
             expire: new Date() + 9999
